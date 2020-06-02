@@ -1,0 +1,55 @@
+#  Course          : Knowledge Discovery & Data Mining
+#  First Name      : Aakash
+#  Last Name       : Rami
+#  CWId            : 10453138
+#Midterm Examination
+
+rm(list=ls())
+library(e1071)
+library(rpart)
+library(rpart.plot) 
+library(rattle)
+library(RColorBrewer)
+#Loading file into csvfile
+choosecsv<-file.choose()
+covid_data<- read.csv(choosecsv,header=TRUE,na.strings = " ")
+
+
+#removing NA from the loaded csvfile
+covid_csv_without_NA<-na.omit(covid_data)
+
+
+#taking max values from Age and MonthAthospital column for discretize
+max_hp<-max(covid_csv_without_NA$MonthAtHospital)
+max_age<-max(covid_csv_without_NA$Age)
+
+#Discretizing the Age and MonthAthosplital into given labels
+covid_csv_without_NA$MonthAtHospital<-cut(covid_csv_without_NA$MonthAtHospital,breaks=c(-1,6,max_hp),labels=c("less than 6 months","6 or more months"))
+covid_csv_without_NA$Age<-cut(covid_csv_without_NA$Age,breaks=c(-1,35,50,max_age),labels=c("less than 35","35 to 50","51 or more"))
+View(covid_csv_without_NA)
+
+
+
+#Dividing the normalized data in 70:30 ratio
+split_data<-sort(sample(nrow(covid_csv_without_NA),as.integer(.70*nrow(covid_csv_without_NA))))
+
+train_data<-covid_csv_without_NA[split_data,]
+test_data<-covid_csv_without_NA[-split_data,]
+train_data$Infected=as.factor(train_data$Infected)
+#CART MODEL
+dt_model<-rpart(Infected~.,train_data[,-1])
+rpart.plot(dt_model,roundint = FALSE)
+
+prediction_data<-predict(dt_model,test_data[,-1],type="class") 
+table(test_data[,7],prediction_data)
+
+fancyRpartPlot(dt_model)
+#Calculating the accuracy
+wrong<-sum(test_data[,7]!=prediction_data)
+error_rate<-wrong/length(test_data[,7])
+error_rate 
+
+
+
+
+
